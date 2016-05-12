@@ -16,3 +16,10 @@ Just create a `composer.json` file and run the `php composer.phar install` comma
         }
     }
 
+## Installation Ubuntu
+
+`git clone git@github.com:VortexCommerce/pake.git /usr/local/bin/`
+
+Add `export PATH=$PATH:/usr/local/bin/pake/bin` to `~/.bashrc`.
+
+Thats it!!!
