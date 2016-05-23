@@ -90,7 +90,11 @@ class pakeGit
                     $name           = $key;
                     $directory      = isset($value['directory']) ? $value['directory'] : null;
                     $branch         = isset($value['branch']) ? $value['branch'] : null;
-                    $this->addSubmodule($repository, $name, $directory, $branch);
+                    $isNewSubmodule = $this->addSubmodule($repository, $name, $directory, $branch);
+                    if($isNewSubmodule === false) {
+                        // Submodule has already been added
+                        continue;
+                    }
                     if (isset($value['remotes'])) {
                         $cwd = getcwd();
                         if ($directory) {
@@ -149,7 +153,7 @@ class pakeGit
             throw new pakeException("You must supply a directory relative of the git root.");
         }
         if (is_dir($directory)) {
-            throw new pakeException("The supplied directory '".$directory."' already exists.");
+            return false;
         }
         return $this->_run('submodule add -f -b ' . $branch . ' --name ' . $name . ' ' . $repository . ' ' . $directory);
     }
