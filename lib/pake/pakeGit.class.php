@@ -107,6 +107,22 @@ class pakeGit
                     $this->addRemote($repository, $name, $directory, false);
                     break;
             }
+
+            if (isset($value['symlink'])) {
+                if (!isset($value['symlink']['target'])) {
+                    $error = "Symbolic link target not set.";
+                    throw new pakeException($error);
+                }
+                if (!isset($value['symlink']['link'])) {
+                    $error = "Symbolic link link not set.";
+                    throw new pakeException($error);
+                }
+                if (!is_dir($value['symlink']['target'])) {
+                    $error = "Symbolic link target directory '{$value['symlink']['target']}' doesn't exist.";
+                    throw new pakeException($error);
+                }
+                symlink($value['symlink']['target'] , $value['symlink']['link']);
+            }
         }
 
     }
