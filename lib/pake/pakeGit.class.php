@@ -125,7 +125,20 @@ class pakeGit
                     $error = "Symbolic link target directory '{$value['symlink']['target']}' doesn't exist.";
                     throw new pakeException($error);
                 }
-                symlink($value['symlink']['target'] , $value['symlink']['link']);
+                $target     = $value['symlink']['target'];
+                $link       = $value['symlink']['link'];
+                $depth      = count(explode('/', $link)) - 1;
+                $dirname    = pathinfo($link, PATHINFO_DIRNAME);
+                $basename   = pathinfo($link, PATHINFO_BASENAME);
+
+                if (!is_dir($link)) {
+                    mkdir($dirname, 0777, true);
+                }
+
+                chdir($dirname);
+                $target = str_repeat('../', $depth) . $target;
+
+                symlink($target, $basename);
             }
         }
 
