@@ -90,7 +90,11 @@ class pakeGit
                     $name           = $key;
                     $directory      = isset($value['directory']) ? $value['directory'] : null;
                     $branch         = isset($value['branch']) ? $value['branch'] : null;
-                    $this->addSubmodule($repository, $name, $directory, $branch);
+                    $isNewSubmodule = $this->addSubmodule($repository, $name, $directory, $branch);
+                    if($isNewSubmodule === false) {
+                        // Submodule has already been added
+                        continue;
+                    }
                     if (isset($value['remotes'])) {
                         $cwd = getcwd();
                         if ($directory) {
@@ -151,22 +155,23 @@ class pakeGit
      *
      * @param string        $repository
      * @param string        $name
-     * @param string|null   $directory
+     * @param string        $directory
      * @param string|null   $branch
      *
      * @return string|Exception
      */
-    public function addSubmodule($repository, $name, $directory = null, $branch = null)
+    public function addSubmodule($repository, $name, $directory, $branch = null)
     {
         if (!$branch) {
             $branch = $this->_getHeadBranchFromRemote($repository);
         }
         if (!$directory) {
-            $directory = getcwd();
-        } else {
-            $directory = realpath($directory);
+            throw new pakeException("You must supply a directory relative of the git root.");
         }
-        return $this->_run('submodule add -b ' . escapeshellarg($branch) . ' --name ' . escapeshellarg($name) . ' ' . $repository . ' .', $directory);
+        if (is_dir($directory)) {
+            return false;
+        }
+        return $this->_run('submodule add -f -b ' . $branch . ' --name ' . $name . ' ' . $repository . ' ' . $directory);
     }
 
     /**
@@ -184,7 +189,7 @@ class pakeGit
         } else {
             $directory = realpath($directory);
         }
-        return  $this->_run('remote add ' . escapeshellarg($name) . ' ' . $repository, $directory);
+        return  $this->_run('remote add ' . $name . ' ' . $repository, $directory);
     }
 
     /**
@@ -194,7 +199,7 @@ class pakeGit
      */
     protected function _getHeadBranchFromRemote($remote)
     {
-        $result = $this->_run('remote show ' . escapeshellarg($remote));
+        $result = $this->_run('remote show ' . $remote);
         if (!$result) {
             $error = "There was now result for '.$remote.' check that the repository exists and is reachable.";
             throw new pakeException($error);
@@ -216,7 +221,7 @@ class pakeGit
     protected function _git()
     {
         if (is_null($this->_which)) {
-            $this->_which = escapeshellarg(pake_which('git'));
+            $this->_which = pake_which('git');
         }
         return $this->_which;
     }
@@ -234,16 +239,21 @@ class pakeGit
         $cwd = getcwd();
         if (is_null($directory)) {
             $directory = $this->getPath();
-        } else if ($directory) {
-            $directory = realpath($directory);
+        }
+        if ($directory) {
+            if (!is_dir($directory)) {
+                mkdir($directory, 0777, true);
+            }
         }
         try {
             if ($directory) {
                 chdir($directory);
             }
-            $command = escapeshellarg($this->_git()) . ' ' . $command . ')';
+            $command = $this->_git() . ' ' . $command;
             $result = pake_sh($command);
-            chdir($cwd);
+            if (getcwd() != $cwd) {
+                chdir($cwd);
+            }
         } catch (pakeException $e) {
             chdir($cwd);
             throw $e;
