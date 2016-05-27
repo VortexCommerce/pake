@@ -74,7 +74,7 @@ class pakeGit
         if (empty($config)) {
             throw new pakeException("What's going on? I need config to initial a project :p.");
         }
-//        $this->_validateProjectConfiguration($config);
+        $this->_validateProjectConfiguration($config);
         $this->_initProjectRecursive($config);
     }
 
@@ -84,33 +84,33 @@ class pakeGit
     protected function _initProjectRecursive($config)
     {
         foreach ($config as $key => $value) {
-//            switch ($value['type']) {
-//                case 'submodule':
-//                    $repository     = $value['repository'];
-//                    $name           = $key;
-//                    $directory      = isset($value['directory']) ? $value['directory'] : null;
-//                    $branch         = isset($value['branch']) ? $value['branch'] : null;
-//                    $isNewSubmodule = $this->addSubmodule($repository, $name, $directory, $branch);
-//                    if($isNewSubmodule === false) {
-//                        // Submodule has already been added
-//                        continue;
-//                    }
-//                    if (isset($value['remotes'])) {
-//                        $cwd = getcwd();
-//                        if ($directory) {
-//                            chdir($directory);
-//                        }
-//                        $this->_initProjectRecursive($value['remotes']);
-//                        chdir($cwd);
-//                    }
-//                    break;
-//                case 'remote':
-//                    $repository     = $value['repository'];
-//                    $name           = $key;
-//                    $directory      = isset($value['directory']) ? $value['directory'] : null;
-//                    $this->addRemote($repository, $name, $directory, false);
-//                    break;
-//            }
+            switch ($value['type']) {
+                case 'submodule':
+                    $repository     = $value['repository'];
+                    $name           = $key;
+                    $directory      = isset($value['directory']) ? $value['directory'] : null;
+                    $branch         = isset($value['branch']) ? $value['branch'] : null;
+                    $isNewSubmodule = $this->addSubmodule($repository, $name, $directory, $branch);
+                    if($isNewSubmodule === false) {
+                        // Submodule has already been added
+                        continue;
+                    }
+                    if (isset($value['remotes'])) {
+                        $cwd = getcwd();
+                        if ($directory) {
+                            chdir($directory);
+                        }
+                        $this->_initProjectRecursive($value['remotes']);
+                        chdir($cwd);
+                    }
+                    break;
+                case 'remote':
+                    $repository     = $value['repository'];
+                    $name           = $key;
+                    $directory      = isset($value['directory']) ? $value['directory'] : null;
+                    $this->addRemote($repository, $name, $directory, false);
+                    break;
+            }
 
             if (isset($value['symlink'])) {
                 if (!isset($value['symlink']['target'])) {
