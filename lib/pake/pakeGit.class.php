@@ -110,6 +110,36 @@ class pakeGit
                     }
                     break;
             }
+
+            if (isset($value['symlink'])) {
+                if (!isset($value['symlink']['target'])) {
+                    $error = "Symbolic link target not set.";
+                    throw new pakeException($error);
+                }
+                if (!isset($value['symlink']['link'])) {
+                    $error = "Symbolic link link not set.";
+                    throw new pakeException($error);
+                }
+                if (!is_dir($value['symlink']['target'])) {
+                    $error = "Symbolic link target directory '{$value['symlink']['target']}' doesn't exist.";
+                    throw new pakeException($error);
+                }
+                $target     = $value['symlink']['target'];
+                $link       = $value['symlink']['link'];
+                $depth      = count(explode('/', $link)) - 1;
+                $dirname    = pathinfo($link, PATHINFO_DIRNAME);
+                $basename   = pathinfo($link, PATHINFO_BASENAME);
+
+                if (!is_dir($link)) {
+                    mkdir($dirname, 0777, true);
+                }
+                $cwd = getcwd();
+                chdir($dirname);
+                $target = str_repeat('../', $depth) . $target;
+
+                symlink($target, $basename);
+                chdir($cwd);
+            }
         }
 
     }
