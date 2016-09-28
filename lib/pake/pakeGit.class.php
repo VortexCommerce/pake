@@ -90,11 +90,7 @@ class pakeGit
                     $name           = $key;
                     $directory      = isset($value['directory']) ? $value['directory'] : null;
                     $branch         = isset($value['branch']) ? $value['branch'] : null;
-                    $isNewSubmodule = $this->addSubmodule($repository, $name, $directory, $branch);
-                    if($isNewSubmodule === false) {
-                        // Submodule has already been added
-                        continue;
-                    }
+                    $this->addSubmodule($repository, $name, $directory, $branch);
                     if (isset($value['remotes'])) {
                         $cwd = getcwd();
                         if ($directory) {
@@ -108,7 +104,10 @@ class pakeGit
                     $repository     = $value['repository'];
                     $name           = $key;
                     $directory      = isset($value['directory']) ? $value['directory'] : null;
-                    $this->addRemote($repository, $name, $directory, false);
+                    $isNewRemote = $this->addRemote($repository, $name, $directory, $value['merge']);
+                    if($isNewRemote === false) {
+                        pake_echo_comment("Skipping adding remote " . $value['repository'] . "; Remote with this name already exists");
+                    }
                     break;
             }
 
@@ -134,11 +133,12 @@ class pakeGit
                 if (!is_dir($link)) {
                     mkdir($dirname, 0777, true);
                 }
-
+                $cwd = getcwd();
                 chdir($dirname);
                 $target = str_repeat('../', $depth) . $target;
 
                 symlink($target, $basename);
+                chdir($cwd);
             }
         }
 
@@ -195,14 +195,29 @@ class pakeGit
      * @return string
      * @throws Exception
      */
-    public function addRemote($repository, $name, $directory = null, $merge = false)
+    public function addRemote($repository, $name, $directory = null, $merge = false, $branch = 'master')
     {
         if (!$directory) {
             $directory = getcwd();
         } else {
             $directory = realpath($directory);
         }
-        return  $this->_run('remote add ' . $name . ' ' . $repository, $directory);
+        try {
+            $result = $this->_run('remote add ' . $name . ' ' . $repository, $directory);
+
+            if($merge) {
+                $this->_run("fetch {$name}", $directory);
+                $this->_run("merge {$name}/{$branch}", $directory);
+            }
+        } catch (pakeException $e) {
+            if(preg_match("|remote {$name} already exists|", $e->getMessage()) === 1) {
+                // Remote already exists
+                $result = false;
+            } else {
+                throw $e;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -249,6 +264,7 @@ class pakeGit
      */
     protected function _run($command, $directory = null)
     {
+        pake_echo_comment("Running $command in $directory");
         $cwd = getcwd();
         if (is_null($directory)) {
             $directory = $this->getPath();
