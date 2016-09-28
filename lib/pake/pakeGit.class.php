@@ -74,7 +74,7 @@ class pakeGit
         if (empty($config)) {
             throw new pakeException("What's going on? I need config to initial a project :p.");
         }
-        $this->_validateProjectConfiguration($config);
+//        $this->_validateProjectConfiguration($config);
         $this->_initProjectRecursive($config);
     }
 
